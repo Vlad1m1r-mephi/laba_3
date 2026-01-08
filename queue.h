@@ -15,10 +15,14 @@ typedef struct Queue {
 } Queue;
 
 void queue_init(Queue *q);
-int  queue_push(Queue *q, int value);   /* 0 – ок, !=0 – ошибка */
-int  queue_pop(Queue *q, int *value);   /* 0 – ок, !=0 – пусто  */
+int queue_push(Queue *q, int value);
+int queue_pop(Queue *q, int *value);
 void queue_free(Queue *q);
-int *queue_to_array(const Queue *q, size_t *out_size);
+void queue_print(const Queue *q);
+int queue_edit_at(Queue *q, size_t index, int new_value);
+void queue_selection_sort(Queue *q);
+void queue_quick_sort(Queue *q);
+Queue* queue_copy(const Queue *q);
+int queue_is_empty(const Queue *q);
 
 #endif
-//абвгдеёжз
