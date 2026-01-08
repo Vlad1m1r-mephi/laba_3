@@ -21,3 +21,4 @@ void queue_free(Queue *q);
 int *queue_to_array(const Queue *q, size_t *out_size);
 
 #endif
+//абвгдеёжз
