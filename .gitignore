@@ -1,0 +1,21 @@
+# Объектные файлы C
+*.o
+
+# Исполняемые файлы (Windows)
+*.exe
+*.out
+
+# Файлы сборки и отладки
+program
+
+# Служебные файлы IDE/редакторов
+.*vscode*/
+build/
+*.swp
+*~
+.venv
+venv
+
+benchmark_results/
+benchmark_report
+data.txt
