@@ -122,4 +122,7 @@ Queue* queue_copy(const Queue *q);
  */
 int queue_is_empty(const Queue *q);
 
+QueueNode* get_tail(QueueNode *head);
+
+
 #endif  // Конец защиты от повторного включения

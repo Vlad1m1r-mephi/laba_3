@@ -169,62 +169,88 @@ int queue_is_empty(const Queue *q)
  */
 void queue_selection_sort(Queue *q)
 {
-    // Проверка тривиальных случаев: 0 или 1 элемент
     if (!q->head || !q->head->next)
         return;
 
-    // Внешний цикл: проходим по всем элементам
+    QueueNode *prev_current = NULL;
     QueueNode *current = q->head;
+    QueueNode *new_head = NULL;
+    QueueNode *new_tail = NULL;
     
     while (current) {
-        // Предполагаем, что текущий элемент - минимальный
+        // Находим минимальный элемент в оставшейся части
+        QueueNode *prev_min = NULL;
         QueueNode *min = current;
+        QueueNode *prev = current;
         QueueNode *runner = current->next;
         
-        // Внутренний цикл: поиск минимального элемента в оставшейся части
         while (runner) {
             if (runner->value < min->value) {
-                min = runner;  // Найден новый минимум
+                prev_min = prev;
+                min = runner;
             }
+            prev = runner;
             runner = runner->next;
         }
         
-        // Если минимальный элемент не на своем месте, меняем значения
-        if (min != current) {
-            int temp = current->value;
-            current->value = min->value;
-            min->value = temp;
+        // Удаляем min из текущей позиции
+        if (prev_min) {
+            prev_min->next = min->next;
+        } else {
+            current = min->next;  // min был current
         }
         
-        // Переходим к следующей позиции
-        current = current->next;
+        // Отсоединяем min
+        min->next = NULL;
+        
+        // Добавляем min в новый отсортированный список
+        if (!new_head) {
+            new_head = new_tail = min;
+        } else {
+            new_tail->next = min;
+            new_tail = min;
+        }
+        
+        // Если min был current, нужно обновить current
+        if (min == current) {
+            if (prev_current) {
+                prev_current->next = current->next;
+                current = current->next;
+            } else {
+                current = q->head->next;
+            }
+        }
     }
+    
+    // Обновляем указатели очереди
+    q->head = new_head;
+    q->tail = new_tail;
 }
 
 /*
- * Вспомогательная функция для быстрой сортировки
- * Разделяет список относительно опорного элемента (pivot)
- * Элементы меньше pivot перемещаются в начало, остальные - в конец
- * Возвращает указатель на опорный элемент
- * new_head, new_tail - обновленные границы после разделения
+ * Вспомогательная функция: разделение очереди относительно опорного элемента
+ * Возвращает узел, который будет новым хвостом левой части
  */
-QueueNode* partition(QueueNode *head, QueueNode *tail, QueueNode **new_head, QueueNode **new_tail)
+QueueNode* partition(QueueNode *head, QueueNode *tail, 
+                     QueueNode **new_head, QueueNode **new_tail)
 {
-    QueueNode *pivot = tail;           // Опорный элемент - последний в текущем сегменте
+    QueueNode *pivot = tail;
     QueueNode *prev = NULL, *cur = head, *end = pivot;
     
     while (cur != pivot) {
         if (cur->value < pivot->value) {
-            // Элемент меньше опорного - остается на своем месте
+            // Оставляем в левой части
             if (*new_head == NULL)
                 *new_head = cur;
             prev = cur;
             cur = cur->next;
         } else {
-            // Элемент больше или равен опорному - перемещается в конец
+            // Перемещаем в правую часть
+            QueueNode *tmp = cur->next;
+            
             if (prev)
                 prev->next = cur->next;
-            QueueNode *tmp = cur->next;
+            
             cur->next = NULL;
             end->next = cur;
             end = cur;
@@ -232,55 +258,54 @@ QueueNode* partition(QueueNode *head, QueueNode *tail, QueueNode **new_head, Que
         }
     }
     
-    // Если все элементы были меньше опорного
     if (*new_head == NULL)
         *new_head = pivot;
     
-    // Обновление хвоста
     *new_tail = end;
     
     return pivot;
 }
 
 /*
- * Рекурсивная функция быстрой сортировки для связного списка
- * Применяет стратегию "разделяй и властвуй"
- * Возвращает новый указатель на начало отсортированного списка
+ * Рекурсивная сортировка
  */
-QueueNode* quick_sort_rec(QueueNode *head, QueueNode *tail)
+QueueNode* quick_sort_recursive(QueueNode *head, QueueNode *tail)
 {
-    // Базовый случай рекурсии: 0 или 1 элемент
     if (!head || head == tail)
         return head;
     
     QueueNode *new_head = NULL, *new_tail = NULL;
     
-    // 1. Разделение: pivot занимает правильную позицию
+    // Разделяем список
     QueueNode *pivot = partition(head, tail, &new_head, &new_tail);
     
-    // 2. Рекурсивная сортировка левой части (элементы < pivot)
+    // Если элементы слева от pivot есть
     if (new_head != pivot) {
-        // Отделяем левую часть от pivot
+        // Отделяем левую часть
         QueueNode *tmp = new_head;
         while (tmp->next != pivot)
             tmp = tmp->next;
         tmp->next = NULL;
         
-        // Рекурсивная сортировка левой части
-        new_head = quick_sort_rec(new_head, tmp);
+        // Рекурсивно сортируем левую часть
+        new_head = quick_sort_recursive(new_head, tmp);
         
-        // Присоединяем отсортированную левую часть к pivot
-        tmp = new_head;
-        while (tmp->next)
-            tmp = tmp->next;
+        // Соединяем с pivot
+        tmp = get_tail(new_head);
         tmp->next = pivot;
     }
     
-    // 3. Рекурсивная сортировка правой части (элементы > pivot)
-    pivot->next = quick_sort_rec(pivot->next, new_tail);
+    // Рекурсивно сортируем правую часть
+    pivot->next = quick_sort_recursive(pivot->next, new_tail);
     
-    // 4. Возврат нового начала списка
     return new_head;
+}
+
+QueueNode* get_tail(QueueNode *head)
+{
+    while (head && head->next)
+        head = head->next;
+    return head;
 }
 
 /*
@@ -292,24 +317,14 @@ QueueNode* quick_sort_rec(QueueNode *head, QueueNode *tail)
  */
 void queue_quick_sort(Queue *q)
 {
-    // Проверка тривиальных случаев
     if (!q->head || !q->head->next)
         return;
     
-    // Находим хвост очереди (последний элемент)
-    QueueNode *tail = q->head;
-    while (tail->next)
-        tail = tail->next;
+    // Сортируем рекурсивно
+    q->head = quick_sort_recursive(q->head, q->tail);
     
-    // Рекурсивная сортировка
-    q->head = quick_sort_rec(q->head, tail);
-    
-    // Обновление указателя на хвост после сортировки
-    QueueNode *node = q->head;
-    while (node && node->next) {
-        node = node->next;
-    }
-    q->tail = node;
+    // Обновляем tail
+    q->tail = get_tail(q->head);
 }
 
 /*
