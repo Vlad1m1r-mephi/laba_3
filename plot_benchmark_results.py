@@ -30,13 +30,13 @@ class BenchmarkVisualizer:
     def find_latest_benchmark(self):
         """Находит последний JSON файл с результатами"""
         if not os.path.exists(self.benchmark_dir):
-            print(f"❌ Папка '{self.benchmark_dir}' не найдена.")
+            print(f"Папка '{self.benchmark_dir}' не найдена.")
             return None
         
         # Ищем JSON файлы
         json_files = glob.glob(os.path.join(self.benchmark_dir, "benchmark_*.json"))
         if not json_files:
-            print(f"❌ В папке '{self.benchmark_dir}' не найдено JSON файлов.")
+            print(f"В папке '{self.benchmark_dir}' не найдено JSON файлов.")
             return None
         
         # Сортируем по времени создания (по имени файла)
@@ -65,7 +65,7 @@ class BenchmarkVisualizer:
             return False
         
         if not os.path.exists(self.json_file):
-            print(f"❌ Файл '{self.json_file}' не найден.")
+            print(f"Файл '{self.json_file}' не найден.")
             return False
         
         try:
@@ -83,14 +83,14 @@ class BenchmarkVisualizer:
             # Очищаем данные от некорректных значений
             self._clean_data()
             
-            print("✅ Данные успешно загружены")
-            print(f"   • Файл: {os.path.basename(self.json_file)}")
-            print(f"   • Размеров данных: {len(self.sizes)}")
-            print(f"   • Диапазон: от {self.sizes[0]} до {self.sizes[-1]} элементов")
+            print("Данные успешно загружены")
+            print(f"   Файл: {os.path.basename(self.json_file)}")
+            print(f"   Размеров данных: {len(self.sizes)}")
+            print(f"   Диапазон: от {self.sizes[0]} до {self.sizes[-1]} элементов")
             return True
             
         except Exception as e:
-            print(f"❌ Ошибка чтения файла: {e}")
+            print(f"Ошибка чтения файла: {e}")
             return False
     
     def _clean_data(self):
@@ -157,19 +157,19 @@ class BenchmarkVisualizer:
             print("="*70)
             
             print(f"\nСортировка выбором (O(n²)):")
-            print(f"   • Минимум: {np.min(self.selection_times):.6f} сек")
-            print(f"   • Максимум: {np.max(self.selection_times):.6f} сек")
-            print(f"   • Среднее: {np.mean(self.selection_times):.6f} сек")
+            print(f"   Минимум: {np.min(self.selection_times):.6f} сек")
+            print(f"   Максимум: {np.max(self.selection_times):.6f} сек")
+            print(f"   Среднее: {np.mean(self.selection_times):.6f} сек")
             
             print(f"\nБыстрая сортировка (O(n log n)):")
-            print(f"   • Минимум: {np.min(self.quick_times):.6f} сек")
-            print(f"   • Максимум: {np.max(self.quick_times):.6f} сек")
-            print(f"   • Среднее: {np.mean(self.quick_times):.6f} сек")
+            print(f"   Минимум: {np.min(self.quick_times):.6f} сек")
+            print(f"   Максимум: {np.max(self.quick_times):.6f} сек")
+            print(f"   Среднее: {np.mean(self.quick_times):.6f} сек")
             
             print(f"\nОтношение времени (выбор/быстрая):")
-            print(f"   • Минимум: {np.min(valid_ratios):.2f}x")
-            print(f"   • Максимум: {np.max(valid_ratios):.2f}x")
-            print(f"   • Среднее: {np.mean(valid_ratios):.2f}x")
+            print(f"   Минимум: {np.min(valid_ratios):.2f}x")
+            print(f"   Максимум: {np.max(valid_ratios):.2f}x")
+            print(f"   Среднее: {np.mean(valid_ratios):.2f}x")
             
             # Анализ роста
             if len(self.sizes) > 1:
@@ -194,11 +194,11 @@ class BenchmarkVisualizer:
             
             print(f"\n  От {self.sizes[idx1]:,} до {self.sizes[idx2]:,} элементов "
                   f"({size_growth:.1f}x):")
-            print(f"    • Выбор: {time_growth_selection:.1f}x "
+            print(f"    Выбор: {time_growth_selection:.1f}x "
                   f"(ожидается ~{size_growth**2:.1f}x для O(n²))")
-            print(f"    • Быстрая: {time_growth_quick:.1f}x "
+            print(f"    Быстрая: {time_growth_quick:.1f}x "
                   f"(ожидается ~{size_growth*np.log(self.sizes[idx2])/np.log(self.sizes[idx1]):.1f}x для O(n log n))")
-    
+
     def create_plots(self):
         """Создание и сохранение графиков"""
         print("\n" + "="*70)
@@ -208,7 +208,7 @@ class BenchmarkVisualizer:
         # Фильтруем данные для графиков
         mask = (self.selection_times > 0.00001) & (self.quick_times > 0.00001)
         if np.sum(mask) < 3:
-            print("⚠️  Слишком мало данных для построения графиков")
+            print("Слишком мало данных для построения графиков")
             return []
         
         valid_sizes = self.sizes[mask]
@@ -259,30 +259,27 @@ class BenchmarkVisualizer:
         
         ax2.set_xlabel('Размер очереди (элементов)', fontsize=11)
         ax2.set_ylabel('Время выполнения (секунды)', fontsize=11)
-        ax2.set_title('Логарифмический масштаб с трендами', 
+        ax2.set_title('Логарифмический масштаб', 
                      fontsize=13, fontweight='bold')
         ax2.legend(fontsize=9)
         ax2.grid(True, alpha=0.3, which='both')
         
-        # 3. График отношений
+        # 3. График отношений скоростей (без средней линии)
         ax3 = plt.subplot(2, 2, 3)
         if len(valid_ratios) > 0:
             bars = ax3.bar(range(len(valid_ratios)), valid_ratios, 
                           color=['#2ECC71' if r < 10 else '#F39C12' for r in valid_ratios],
                           alpha=0.7)
             
+            # Только базовая линия на y=1
             ax3.axhline(y=1, color='gray', linestyle='--', alpha=0.5)
-            if np.mean(valid_ratios) > 0:
-                ax3.axhline(y=np.mean(valid_ratios), color='red', linestyle='-', 
-                           alpha=0.5, label=f'Среднее: {np.mean(valid_ratios):.1f}x')
             
             ax3.set_xlabel('Размер данных', fontsize=11)
             ax3.set_ylabel('Отношение времени (выбор / быстрая)', fontsize=11)
-            ax3.set_title('Во сколько раз сортировка выбором медленнее', 
+            ax3.set_title('Отношение скоростей сортировок', 
                          fontsize=13, fontweight='bold')
             ax3.set_xticks(range(len(valid_sizes)))
             ax3.set_xticklabels([f'{s:,}' for s in valid_sizes], rotation=45, fontsize=9)
-            ax3.legend(fontsize=9)
             ax3.grid(True, alpha=0.3, axis='y')
             
             # Подписи на столбцах
@@ -294,9 +291,9 @@ class BenchmarkVisualizer:
         else:
             ax3.text(0.5, 0.5, 'Недостаточно данных\nдля сравнения',
                     ha='center', va='center', fontsize=12)
-            ax3.set_title('Отношение времени сортировок', fontsize=13, fontweight='bold')
+            ax3.set_title('Отношение скоростей сортировок', fontsize=13, fontweight='bold')
         
-        # 4. График производительности на элемент
+        # 4. График эффективности алгоритмов
         ax4 = plt.subplot(2, 2, 4)
         
         time_per_element_selection = valid_selection / valid_sizes
@@ -309,7 +306,7 @@ class BenchmarkVisualizer:
         
         ax4.set_xlabel('Размер очереди (элементов)', fontsize=11)
         ax4.set_ylabel('Время на элемент (секунды)', fontsize=11)
-        ax4.set_title('Эффективность алгоритмов (меньше = лучше)', 
+        ax4.set_title('Эффективность алгоритмов', 
                      fontsize=13, fontweight='bold')
         ax4.legend(fontsize=10)
         ax4.grid(True, alpha=0.3)
@@ -341,10 +338,34 @@ class BenchmarkVisualizer:
             filename = f"{base_filename}.{fmt}"
             plt.savefig(filename, dpi=300, bbox_inches='tight')
             saved_files.append(filename)
-            print(f"   ✅ Сохранено: {os.path.basename(filename)}")
+            print(f"   Сохранено: {os.path.basename(filename)}")
         
-        # Показываем график
-        plt.show()
+        # Закрываем график перед показом
+        plt.close(fig)
+        
+        # Спрашиваем пользователя, хочет ли он посмотреть график
+        print("\nХотите посмотреть график сейчас? (y/n): ")
+        answer = input().strip().lower()
+        
+        if answer == 'y' or answer == 'yes' or answer == 'да':
+            print("Открываю график...")
+            # Создаем новую фигуру для отображения
+            fig2, axes = plt.subplots(2, 2, figsize=(16, 10))
+            # Загружаем сохраненное изображение
+            img = plt.imread(saved_files[0])  # Берем первый файл (png)
+            plt.imshow(img)
+            plt.axis('off')
+            
+            # Показываем график с таймаутом
+            try:
+                plt.show(block=False)
+                # Ждем несколько секунд, затем закрываем
+                plt.pause(30)  # Показываем график 30 секунд
+                plt.close()
+                print("График закрыт.")
+            except KeyboardInterrupt:
+                plt.close()
+                print("\nГрафик закрыт по запросу пользователя.")
         
         return saved_files, test_dir
     
@@ -392,25 +413,25 @@ class BenchmarkVisualizer:
                 max_ratio_idx = np.argmax(self.ratios)
                 
                 f.write("1. ОБЩАЯ ЭФФЕКТИВНОСТЬ:\n")
-                f.write(f"   • Быстрая сортировка в среднем в {avg_ratio:.1f} раз быстрее\n")
-                f.write(f"   • Максимальное преимущество ({max_ratio:.1f}x) при размере "
+                f.write(f"   Быстрая сортировка в среднем в {avg_ratio:.1f} раз быстрее\n")
+                f.write(f"   Максимальное преимущество ({max_ratio:.1f}x) при размере "
                        f"{self.sizes[max_ratio_idx]:,} элементов\n\n")
                 
                 f.write("2. СЛОЖНОСТЬ АЛГОРИТМОВ:\n")
-                f.write("   • Сортировка выбором: O(n²) - квадратичная сложность\n")
-                f.write("   • Быстрая сортировка: O(n log n) - логарифмическая сложность\n\n")
+                f.write("   Сортировка выбором: O(n²) - квадратичная сложность\n")
+                f.write("   Быстрая сортировка: O(n log n) - логарифмическая сложность\n\n")
                 
                 f.write("3. РЕКОМЕНДАЦИИ ПО ВЫБОРУ АЛГОРИТМА:\n")
-                f.write("   • < 1,000 элементов: разница незначительна, можно использовать любой\n")
-                f.write("   • 1,000 - 10,000 элементов: быстрая сортировка предпочтительна\n")
-                f.write("   • > 10,000 элементов: всегда использовать быструю сортировку\n\n")
+                f.write("   < 1,000 элементов: разница незначительна, можно использовать любой\n")
+                f.write("   1,000 - 10,000 элементов: быстрая сортировка предпочтительна\n")
+                f.write("   > 10,000 элементов: всегда использовать быструю сортировку\n\n")
                 
                 f.write("4. ФАЙЛЫ РЕЗУЛЬТАТОВ:\n")
-                f.write(f"   • Исходные данные: {os.path.basename(self.json_file)}\n")
-                f.write(f"   • Графики: benchmark_plots_{self.timestamp}.[png/pdf/svg]\n")
-                f.write(f"   • Отчет: benchmark_report_{self.timestamp}.txt\n")
+                f.write(f"   Исходные данные: {os.path.basename(self.json_file)}\n")
+                f.write(f"   Графики: benchmark_plots_{self.timestamp}.[png/pdf/svg]\n")
+                f.write(f"   Отчет: benchmark_report_{self.timestamp}.txt\n")
         
-        print(f"   📝 Текстовый отчет: {os.path.basename(report_file)}")
+        print(f"   Текстовый отчет: {os.path.basename(report_file)}")
         return report_file
     
     def list_all_tests(self):
@@ -426,7 +447,7 @@ class BenchmarkVisualizer:
             print("Проведенные тесты не найдены.")
             return []
         
-        print(f"\n📁 Найдено тестов: {len(test_dirs)}")
+        print(f"\nНайдено тестов: {len(test_dirs)}")
         for i, dir_path in enumerate(test_dirs, 1):
             dir_name = os.path.basename(dir_path)
             timestamp = dir_name.replace("test_", "")
@@ -439,9 +460,9 @@ class BenchmarkVisualizer:
                         data = json.load(f)
                         sizes = data.get('sizes', [])
                         print(f"\n{i}. {dir_name}")
-                        print(f"   • Тестов: {len(sizes)}")
-                        print(f"   • Размеры: от {min(sizes)} до {max(sizes)}")
-                        print(f"   • Дата: {timestamp[:4]}-{timestamp[4:6]}-{timestamp[6:8]} "
+                        print(f"   Тестов: {len(sizes)}")
+                        print(f"   Размеры: от {min(sizes)} до {max(sizes)}")
+                        print(f"   Дата: {timestamp[:4]}-{timestamp[4:6]}-{timestamp[6:8]} "
                               f"{timestamp[9:11]}:{timestamp[11:13]}")
                 except:
                     print(f"\n{i}. {dir_name} (ошибка чтения данных)")
@@ -452,7 +473,7 @@ class BenchmarkVisualizer:
 def main():
     """Основная функция"""
     print("\n" + "="*70)
-    print("📊 ВИЗУАЛИЗАТОР РЕЗУЛЬТАТОВ БЕНЧМАРКА СОРТИРОВОК")
+    print("ВИЗУАЛИЗАТОР РЕЗУЛЬТАТОВ БЕНЧМАРКА СОРТИРОВОК")
     print("="*70)
     
     # Проверка аргументов командной строки
@@ -482,7 +503,7 @@ def main():
         import matplotlib
         import numpy
     except ImportError:
-        print("❌ Ошибка: требуются библиотеки matplotlib и numpy")
+        print("Ошибка: требуются библиотеки matplotlib и numpy")
         print("   Установите их командой:")
         print("   pip install matplotlib numpy")
         return
@@ -502,7 +523,7 @@ def main():
     result = visualizer.create_plots()
     
     if not result:
-        print("⚠️  Не удалось создать графики")
+        print("Не удалось создать графики")
         return
     
     saved_plots, test_dir = result
@@ -512,21 +533,32 @@ def main():
     report_file = visualizer.generate_report(test_dir)
     
     print("\n" + "="*70)
-    print("✅ ВИЗУАЛИЗАЦИЯ ЗАВЕРШЕНА!")
+    print("ВИЗУАЛИЗАЦИЯ ЗАВЕРШЕНА!")
     print("="*70)
     
-    print(f"\n📁 Результаты сохранены в папке: {test_dir}")
-    print(f"📊 Созданные файлы:")
-    print(f"   • JSON с данными: {os.path.basename(visualizer.json_file)}")
-    print(f"   • Графики: {len(saved_plots)} файлов в форматах PNG, PDF, SVG")
-    print(f"   • Отчет: {os.path.basename(report_file)}")
+    print(f"\nРезультаты сохранены в папке: {test_dir}")
+    print(f"Созданные файлы:")
+    print(f"   JSON с данными: {os.path.basename(visualizer.json_file)}")
+    print(f"   Графики: {len(saved_plots)} файлов в форматах PNG, PDF, SVG")
+    print(f"   Отчет: {os.path.basename(report_file)}")
     
-    print("\n📋 Для нового тестирования:")
+    print("\nДля нового тестирования:")
     print("   1. Запустите: ./program --benchmark-auto")
     print("   2. Запустите этот скрипт снова")
     
-    print("\n🔍 Для просмотра всех тестов:")
+    print("\nДля просмотра всех тестов:")
     print("   python plot_benchmark_results.py --list")
+    
+    # Спрашиваем, хочет ли пользователь открыть папку с результатами
+    print("\nХотите открыть папку с результатами? (y/n): ")
+    answer = input().strip().lower()
+    if answer == 'y' or answer == 'yes' or answer == 'да':
+        if sys.platform == "win32":
+            os.startfile(test_dir)
+        elif sys.platform == "darwin":  # macOS
+            os.system(f"open '{test_dir}'")
+        else:  # Linux
+            os.system(f"xdg-open '{test_dir}'")
 
 
 if __name__ == "__main__":
