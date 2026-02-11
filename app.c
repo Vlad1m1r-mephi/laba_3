@@ -19,6 +19,7 @@
 #include <windows.h>
 #endif
 
+// Объявления функций
 void handle_file_mode(const char *filename);
 void handle_sort_once(void);
 void handle_benchmark(void);
@@ -28,10 +29,33 @@ void print_queue_stats(const Queue *q);
 void benchmark_automated(void);
 int safe_scanf_int(int *value);
 int safe_scanf_size_t(size_t *value);
+void save_benchmark_to_csv(const char *filename, size_t *sizes, double *selection_times, 
+                          double *quick_times, double *ratios, int num_sizes, const char *timestamp);
+void print_benchmark_summary(size_t *sizes, double *selection_times, 
+                            double *quick_times, double *ratios, int num_sizes);
+void print_separator(char ch, int length);
+void print_double_separator(char ch, int length);
 
+// Выводит разделительную линию из повторяющихся символов
+void print_separator(char ch, int length) {
+    for(int i = 0; i < length; i++) {
+        printf("%c", ch);
+    }
+    printf("\n");
+}
+
+// Выводит двойную разделительную линию с отступами
+void print_double_separator(char ch, int length) {
+    printf("\n");
+    print_separator(ch, length);
+    print_separator(ch, length);
+    printf("\n");
+}
+
+// Основная функция приложения
 int run_app(int argc, char *argv[])
 {
-    // Настройка кодировки консоли
+    // Настройка кодировки для корректного отображения русских символов
     #ifdef _WIN32
     SetConsoleOutputCP(65001);
     SetConsoleCP(65001);
@@ -51,7 +75,7 @@ int run_app(int argc, char *argv[])
     }
 
     printf("Программа для работы с очередью и сортировкой\n");
-    printf("============================================\n");
+    print_separator('=', 45);
 
     int done = 0;
     while (!done) {
@@ -69,7 +93,7 @@ int run_app(int argc, char *argv[])
             continue;
         }
         
-        // Очистка буфера ввода
+        // Очистка буфера ввода после scanf
         int ch;
         while ((ch = getchar()) != '\n' && ch != EOF) {}
 
@@ -124,11 +148,12 @@ int run_app(int argc, char *argv[])
     return 0;
 }
 
-// Безопасный ввод целого числа
+// Безопасный ввод целого числа с проверкой ошибок
 int safe_scanf_int(int *value)
 {
     int result = scanf("%d", value);
     if (result != 1) {
+        // Очистка буфера при ошибке ввода
         int ch;
         while ((ch = getchar()) != '\n' && ch != EOF) {}
         return 0;
@@ -136,7 +161,7 @@ int safe_scanf_int(int *value)
     return 1;
 }
 
-// Безопасный ввод size_t
+// Безопасный ввод size_t с проверкой ошибок
 int safe_scanf_size_t(size_t *value)
 {
     int result = scanf("%zu", value);
@@ -148,7 +173,7 @@ int safe_scanf_size_t(size_t *value)
     return 1;
 }
 
-// Режим работы с файлом
+// Режим работы с файлом: загрузка, обработка, сохранение
 void handle_file_mode(const char *filename)
 {
     int *prev_orig = NULL, *prev_sorted = NULL;
@@ -296,7 +321,7 @@ void handle_sort_once(void)
     queue_free(&q);
 }
 
-// Редактирование элемента очереди
+// Редактирование элемента очереди по индексу
 void handle_edit_element(void)
 {
     Queue q;
@@ -470,6 +495,76 @@ void print_queue_stats(const Queue *q)
     }
 }
 
+// Сохранение результатов бенчмарка в CSV файл
+void save_benchmark_to_csv(const char *filename, size_t *sizes, double *selection_times, 
+                          double *quick_times, double *ratios, int num_sizes, const char *timestamp)
+{
+    FILE *f = fopen(filename, "w");
+    if (!f) {
+        printf("Ошибка создания файла %s\n", filename);
+        return;
+    }
+    
+    // Заголовок CSV (разделитель - точка с запятой для Excel)
+    fprintf(f, "Размер очереди;Сортировка выбором (сек);Быстрая сортировка (сек);Отношение (выбор/быстрая);Дата теста\n");
+    
+    // Запись данных
+    for (int i = 0; i < num_sizes; i++) {
+        fprintf(f, "%zu;%.6f;%.6f;%.2f;%s\n",
+                sizes[i],
+                selection_times[i],
+                quick_times[i],
+                ratios[i],
+                timestamp);
+    }
+    
+    fclose(f);
+    printf("Результаты сохранены в CSV файл: %s\n", filename);
+}
+
+// Вывод сводки результатов тестирования
+void print_benchmark_summary(size_t *sizes, double *selection_times, 
+                            double *quick_times, double *ratios, int num_sizes)
+{
+    print_double_separator('=', 60);
+    printf("РЕЗУЛЬТАТЫ ТЕСТИРОВАНИЯ\n");
+    print_separator('=', 60);
+    printf("\n");
+    
+    printf("%-12s | %-20s | %-20s | %-15s\n", 
+           "Размер", "Выбор (сек)", "Быстрая (сек)", "Отношение");
+    print_separator('-', 73);
+    
+    for (int i = 0; i < num_sizes; i++) {
+        printf("%-12zu | %-20.6f | %-20.6f | %-15.2f\n", 
+               sizes[i], selection_times[i], quick_times[i], ratios[i]);
+    }
+    
+    // Подсчет статистики
+    double max_ratio = 0;
+    int max_ratio_idx = 0;
+    double total_ratio = 0;
+    int valid_ratios = 0;
+    
+    for (int i = 0; i < num_sizes; i++) {
+        if (ratios[i] > 0) {
+            total_ratio += ratios[i];
+            valid_ratios++;
+            if (ratios[i] > max_ratio) {
+                max_ratio = ratios[i];
+                max_ratio_idx = i;
+            }
+        }
+    }
+    
+    if (valid_ratios > 0) {
+        double avg_ratio = total_ratio / valid_ratios;
+        printf("\nСреднее отношение: %.2f:1\n", avg_ratio);
+        printf("Максимальное отношение: %.2f:1 (при размере %zu элементов)\n", 
+               max_ratio, sizes[max_ratio_idx]);
+    }
+}
+
 // Интерактивное тестирование скорости сортировок
 void handle_benchmark(void)
 {
@@ -510,16 +605,42 @@ void handle_benchmark(void)
     printf("\nРезультаты для очереди из %zu элементов:\n", n);
     printf("Метод прямого выбора: %.6f сек.\n", t_selection);
     printf("Быстрая сортировка (Хоара): %.6f сек.\n", t_quick);
-    printf("Отношение скоростей: %.2f:1 (быстрая быстрее в %.2f раз)\n", 
-           t_selection / t_quick, t_selection / t_quick);
-
-    // Сохранение результатов в файл
-    FILE *f = fopen("benchmark_results.txt", "a");
-    if (f) {
-        fprintf(f, "%zu %.6f %.6f %.2f\n", n, t_selection, t_quick, t_selection/t_quick);
-        fclose(f);
-        printf("\nРезультаты добавлены в файл 'benchmark_results.txt'\n");
+    
+    if (t_quick > 0) {
+        double ratio = t_selection / t_quick;
+        printf("Отношение скоростей: %.2f:1 (быстрая быстрее в %.2f раз)\n", ratio, ratio);
+    } else {
+        printf("Отношение скоростей: N/A (время быстрой сортировки равно 0)\n");
     }
+
+    // Сохранение результатов в CSV файл
+    char timestamp[64];
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", t);
+    
+    char csv_filename[256];
+    snprintf(csv_filename, sizeof(csv_filename), "benchmark_single_%zu_%s.csv", 
+             n, timestamp);
+    
+    // Заменяем недопустимые символы для имени файла
+    for (int i = 0; csv_filename[i]; i++) {
+        if (csv_filename[i] == ':') csv_filename[i] = '-';
+        if (csv_filename[i] == ' ') csv_filename[i] = '_';
+    }
+    
+    // Подготовка данных для сохранения
+    size_t sizes_single[] = {n};
+    double selection_single[] = {t_selection};
+    double quick_single[] = {t_quick};
+    double ratio_single = (t_quick > 0) ? t_selection / t_quick : 0;
+    double ratios_single[] = {ratio_single};
+    
+    save_benchmark_to_csv(csv_filename, sizes_single, selection_single, 
+                         quick_single, ratios_single, 1, timestamp);
+    
+    printf("\nФайл CSV создан: %s\n", csv_filename);
+    printf("Откройте его в Excel для построения графиков.\n");
 
     queue_free(&q1);
     queue_free(&q2);
@@ -529,7 +650,8 @@ void handle_benchmark(void)
 void benchmark_automated(void)
 {
     printf("Автоматическое тестирование алгоритмов сортировки\n");
-    printf("================================================\n\n");
+    print_separator('=', 48);
+    printf("\n");
     
     // Создание папки для результатов
     #ifdef _WIN32
@@ -548,33 +670,14 @@ void benchmark_automated(void)
     }
     #endif
     
-    // Формирование имени файла с временной меткой
-    char json_filename[256];
+    // Формирование временной метки
     char timestamp[64];
     time_t now = time(NULL);
     struct tm *t = localtime(&now);
-    strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", t);
-    snprintf(json_filename, sizeof(json_filename), 
-             "benchmark_results/benchmark_%s.json", timestamp);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", t);
     
-    FILE *f_json = fopen(json_filename, "w");
-    if (!f_json) {
-        printf("Ошибка создания файла %s\n", json_filename);
-        return;
-    }
-    
-    // Запись заголовка JSON
-    fprintf(f_json, "{\n");
-    fprintf(f_json, "  \"title\": \"Сравнение алгоритмов сортировки очереди\",\n");
-    fprintf(f_json, "  \"description\": \"Результаты тестирования на разных размерах данных\",\n");
-    fprintf(f_json, "  \"timestamp\": \"%s\",\n", timestamp);
-    fprintf(f_json, "  \"algorithm_names\": {\n");
-    fprintf(f_json, "    \"selection\": \"Сортировка выбором (O(n²))\",\n");
-    fprintf(f_json, "    \"quick\": \"Быстрая сортировка (O(n log n))\"\n");
-    fprintf(f_json, "  },\n");
-    fprintf(f_json, "  \"sizes\": [");
-    
-    size_t sizes[] = {100, 500, 1000, 5000, 10000, 20000, 50000, 75000, 100000, 150000, 200000};
+    // Размеры для тестирования
+    size_t sizes[] = {100, 500, 1000, 5000, 10000, 20000, 50000, 75000, 100000};
     int num_sizes = sizeof(sizes) / sizeof(sizes[0]);
     
     double *selection_times = (double*)malloc(num_sizes * sizeof(double));
@@ -583,7 +686,6 @@ void benchmark_automated(void)
     
     if (!selection_times || !quick_times || !ratios) {
         printf("Ошибка выделения памяти для результатов\n");
-        fclose(f_json);
         free(selection_times);
         free(quick_times);
         free(ratios);
@@ -591,16 +693,6 @@ void benchmark_automated(void)
     }
     
     printf("Запуск тестов для %d различных размеров...\n\n", num_sizes);
-    
-    // Запись размеров в JSON
-    for (int i = 0; i < num_sizes; i++) {
-        fprintf(f_json, "%zu", sizes[i]);
-        if (i < num_sizes - 1) fprintf(f_json, ", ");
-    }
-    fprintf(f_json, "],\n");
-    
-    fprintf(f_json, "  \"selection_sort\": [");
-    fclose(f_json);
     
     // Цикл тестирования для каждого размера
     for (int i = 0; i < num_sizes; i++) {
@@ -612,15 +704,13 @@ void benchmark_automated(void)
         queue_init(&q2);
         
         srand((unsigned)time(NULL) + i);
-        printf("   Генерация %zu случайных чисел... ", n);
-        fflush(stdout);
+        printf("   Генерация %zu случайных чисел... \n", n);
         
         for (size_t j = 0; j < n; ++j) {
             int val = rand() % 1000000;
             queue_push(&q1, val);
             queue_push(&q2, val);
         }
-        printf("\n");
         
         // Сортировка выбором
         printf("   Сортировка выбором... ");
@@ -659,81 +749,33 @@ void benchmark_automated(void)
         queue_free(&q2);
     }
     
-    // Запись результатов сортировки выбором
-    f_json = fopen(json_filename, "a");
-    if (f_json) {
-        for (int i = 0; i < num_sizes; i++) {
-            fprintf(f_json, "%.6f", selection_times[i]);
-            if (i < num_sizes - 1) fprintf(f_json, ", ");
-        }
-        fprintf(f_json, "],\n");
-        fprintf(f_json, "  \"quick_sort\": [");
-        fclose(f_json);
+    // Сохранение результатов в CSV
+    char csv_filename[256];
+    snprintf(csv_filename, sizeof(csv_filename), 
+             "benchmark_results/benchmark_comprehensive_%s.csv", timestamp);
+    
+    // Заменяем недопустимые символы в имени файла
+    for (int i = 0; csv_filename[i]; i++) {
+        if (csv_filename[i] == ':') csv_filename[i] = '-';
+        if (csv_filename[i] == ' ') csv_filename[i] = '_';
     }
     
-    // Запись результатов быстрой сортировки
-    f_json = fopen(json_filename, "a");
-    if (f_json) {
-        for (int i = 0; i < num_sizes; i++) {
-            fprintf(f_json, "%.6f", quick_times[i]);
-            if (i < num_sizes - 1) fprintf(f_json, ", ");
-        }
-        fprintf(f_json, "],\n");
-        fprintf(f_json, "  \"ratios\": [");
-        fclose(f_json);
-    }
+    save_benchmark_to_csv(csv_filename, sizes, selection_times, 
+                         quick_times, ratios, num_sizes, timestamp);
     
-    // Запись отношений скоростей
-    f_json = fopen(json_filename, "a");
-    if (f_json) {
-        for (int i = 0; i < num_sizes; i++) {
-            if (ratios[i] != ratios[i] || ratios[i] < 0 || ratios[i] > 1e100) {
-                fprintf(f_json, "0.0");
-            } else {
-                fprintf(f_json, "%.2f", ratios[i]);
-            }
-            
-            if (i < num_sizes - 1) fprintf(f_json, ", ");
-        }
-        fprintf(f_json, "]\n");
-        fprintf(f_json, "}\n");
-        fclose(f_json);
-    }
+    // Вывод сводки результатов
+    print_benchmark_summary(sizes, selection_times, quick_times, ratios, num_sizes);
     
     free(selection_times);
     free(quick_times);
     free(ratios);
     
-    printf("Тестирование завершено!\n");
-    printf("Данные сохранены в: '%s'\n\n", json_filename);
-    
-    // Сохранение имени последнего файла
-    FILE *f_last = fopen("benchmark_results/last_benchmark.txt", "w");
-    if (f_last) {
-        fprintf(f_last, "%s", json_filename);
-        fclose(f_last);
-    }
-    
-    printf("Для визуализации результатов выполните:\n");
-    printf("   python plot_benchmark_results.py\n\n");
-    
-    // Проверка наличия Python скрипта
-    FILE *test_py = fopen("plot_benchmark_results.py", "r");
-    if (test_py) {
-        fclose(test_py);
-        printf("Хотите сразу создать графики? (y/n): ");
-        
-        int answer = getchar();
-        if (answer == 'y' || answer == 'Y') {
-            printf("\nЗапуск Python скрипта...\n");
-            #ifdef _WIN32
-            system("python plot_benchmark_results.py");
-            #else
-            system("python3 plot_benchmark_results.py");
-            #endif
-        }
-    } else {
-        printf("Файл 'plot_benchmark_results.py' не найден.\n");
-        printf("   Создайте его для визуализации результатов.\n");
-    }
+    printf("\nТестирование завершено!\n");
+    printf("Данные сохранены в CSV файл: '%s'\n", csv_filename);
+    printf("\nИнструкция для Excel:\n");
+    printf("1. Откройте файл в Excel\n");
+    printf("2. Выделите все данные\n");
+    printf("3. Вставьте -> Диаграмма -> Точечная диаграмма\n");
+    printf("4. Настройте оси (X - Размер очереди, Y - Время в секундах)\n");
+    printf("5. Добавьте линию тренда для каждого алгоритма\n");
 }
