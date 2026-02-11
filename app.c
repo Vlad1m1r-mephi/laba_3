@@ -170,6 +170,7 @@ int safe_scanf_size_t(size_t *value)
         while ((ch = getchar()) != '\n' && ch != EOF) {}
         return 0;
     }
+//djlfjshfhksdfdssesfddfjdj
     return 1;
 }
 
