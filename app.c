@@ -184,109 +184,42 @@ void handle_file_mode(const char *filename)
     if (load_previous_rows(filename, &prev_orig, &prev_orig_n,
                           &prev_sorted, &prev_sorted_n) == 0 &&
         prev_orig && prev_orig_n > 0) {
-        printf("\nРанее сохраненные данные из файла \"%s\":\n", filename);
-        printf("Предыдущий введенный ряд:\n");
+        
+        // ТОЛЬКО ВЫВОД - НИКАКОГО ВВОДА
+        printf("Предыдущий введенный ряд: ");
         print_int_array(prev_orig, prev_orig_n);
 
         if (prev_sorted && prev_sorted_n > 0) {
-            printf("Предыдущий отсортированный ряд:\n");
+            printf("Предыдущий отсортированный ряд: ");
             print_int_array(prev_sorted, prev_sorted_n);
         }
     } else {
-        printf("Файл \"%s\" не найден или пуст. Будет создан новый файл.\n",
-               filename);
+        printf("Файл \"%s\" не найден или пуст.\n", filename);
     }
 
     free(prev_orig);
     free(prev_sorted);
-
-    // Создание и заполнение очереди
-    Queue q;
-    queue_init(&q);
-
-    printf("\nВведите новую последовательность чисел через пробел:\n> ");
-    int *numbers = NULL;
-    size_t count = read_ints_from_stdin(&numbers);
     
-    if (count == 0 || !numbers) {
-        printf("Не удалось прочитать числа.\n");
-        queue_free(&q);
-        free(numbers);
-        return;
-    }
-
-    for (size_t i = 0; i < count; ++i) {
-        if (queue_push(&q, numbers[i]) != 0) {
-            printf("Ошибка: не хватает памяти для очереди.\n");
-            free(numbers);
-            queue_free(&q);
-            return;
-        }
-    }
-
-    printf("\nСозданная очередь:\n");
-    queue_print(&q);
-
-    // Создание копии для сортировки
-    Queue *q_copy = queue_copy(&q);
-    if (!q_copy) {
-        printf("Ошибка копирования очереди.\n");
-        free(numbers);
-        queue_free(&q);
-        return;
-    }
-
-    printf("\nСортируем очередь методом прямого выбора...\n");
-    queue_selection_sort(q_copy);
-
-    // Вывод результатов
-    printf("\nИсходная очередь:\n");
-    queue_print(&q);
-    printf("Отсортированная очередь:\n");
-    queue_print(q_copy);
-
-    // Подготовка массивов для сохранения в файл
-    int *orig_array = (int*)malloc(q.size * sizeof(int));
-    int *sorted_array = (int*)malloc(q_copy->size * sizeof(int));
-    
-    if (orig_array && sorted_array) {
-        // Копирование данных из очереди в массивы
-        QueueNode *node = q.head;
-        size_t i = 0;
-        while (node) {
-            orig_array[i++] = node->value;
-            node = node->next;
-        }
-        
-        node = q_copy->head;
-        i = 0;
-        while (node) {
-            sorted_array[i++] = node->value;
-            node = node->next;
-        }
-        
-        // Сохранение в файл
-        if (save_rows(filename, orig_array, q.size, sorted_array, q_copy->size) != 0) {
-            printf("Не удалось сохранить данные в файл \"%s\".\n", filename);
-        } else {
-            printf("Данные сохранены в файл \"%s\".\n", filename);
-        }
-    } else {
-        printf("Ошибка выделения памяти для сохранения.\n");
-    }
-    
-    // Очистка памяти
-    free(orig_array);
-    free(sorted_array);
-    free(numbers);
-    queue_free(&q);
-    queue_free(q_copy);
-    free(q_copy);
+    // ВОЗВРАЩАЕМСЯ - НИЧЕГО БОЛЬШЕ НЕ ДЕЛАЕМ
+    return;
 }
 
 // Однократная сортировка очереди
 void handle_sort_once(void)
 {
+    char filename[256];
+    printf("Введите имя файла для сохранения: ");
+    if (fgets(filename, sizeof(filename), stdin) == NULL) {
+        printf("Ошибка ввода.\n");
+        return;
+    }
+    filename[strcspn(filename, "\n")] = 0;
+    
+    if (strlen(filename) == 0) {
+        printf("Имя файла не может быть пустым.\n");
+        return;
+    }
+
     Queue q;
     queue_init(&q);
 
@@ -303,7 +236,7 @@ void handle_sort_once(void)
 
     for (size_t i = 0; i < count; ++i) {
         if (queue_push(&q, numbers[i]) != 0) {
-            printf("Ошибка: не хватает памяти для очереди.\n");
+            printf("Ошибка: не хватает памяти.\n");
             free(numbers);
             queue_free(&q);
             return;
@@ -315,9 +248,32 @@ void handle_sort_once(void)
 
     queue_selection_sort(&q);
 
-    printf("Отсортированная очередь (метод прямого выбора):\n");
+    printf("Отсортированная очередь:\n");
     queue_print(&q);
 
+    // Сохраняем в файл
+    int *orig_array = (int*)malloc(q.size * sizeof(int));
+    int *sorted_array = (int*)malloc(q.size * sizeof(int));
+    
+    if (orig_array && sorted_array) {
+        QueueNode *node = q.head;
+        size_t i = 0;
+        while (node) {
+            orig_array[i] = node->value;
+            sorted_array[i] = node->value; // уже отсортировано
+            node = node->next;
+            i++;
+        }
+        
+        if (save_rows(filename, orig_array, q.size, sorted_array, q.size) == 0) {
+            printf("Данные сохранены в файл \"%s\".\n", filename);
+        } else {
+            printf("Ошибка сохранения.\n");
+        }
+    }
+    
+    free(orig_array);
+    free(sorted_array);
     free(numbers);
     queue_free(&q);
 }
