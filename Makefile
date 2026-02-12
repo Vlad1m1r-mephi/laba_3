@@ -3,7 +3,7 @@
 
 TARGET = program
 SOURCES = main.c app.c queue.c number_io.c	
-OBJECTS = main.o app.o number_io.o queue.o
+#OBJECTS = main.o app.o number_io.o queue.o
 
 all:
 	gcc $(SOURCES) -o $(TARGET)
