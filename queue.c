@@ -115,7 +115,6 @@ void queue_selection_sort(Queue *q)
     if (!q->head || !q->head->next)
         return;
 
-    QueueNode *prev_current = NULL;
     QueueNode *current = q->head;
     QueueNode *new_head = NULL;
     QueueNode *new_tail = NULL;
