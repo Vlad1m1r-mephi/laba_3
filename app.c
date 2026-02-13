@@ -170,7 +170,6 @@ int safe_scanf_size_t(size_t *value)
         while ((ch = getchar()) != '\n' && ch != EOF) {}
         return 0;
     }
-//djlfjshfhksdfdssesfddfjdj
     return 1;
 }
 
@@ -185,7 +184,6 @@ void handle_file_mode(const char *filename)
                           &prev_sorted, &prev_sorted_n) == 0 &&
         prev_orig && prev_orig_n > 0) {
         
-        // ТОЛЬКО ВЫВОД - НИКАКОГО ВВОДА
         printf("Предыдущий введенный ряд: ");
         print_int_array(prev_orig, prev_orig_n);
 
@@ -200,7 +198,6 @@ void handle_file_mode(const char *filename)
     free(prev_orig);
     free(prev_sorted);
     
-    // ВОЗВРАЩАЕМСЯ - НИЧЕГО БОЛЬШЕ НЕ ДЕЛАЕМ
     return;
 }
 
@@ -254,10 +251,10 @@ void handle_sort_once(void)
         return;
     }
 
-    queue_selection_sort(&q_copy);
+    queue_selection_sort(q_copy);
 
     printf("Отсортированная очередь:\n");
-    queue_print(&q_copy);
+    queue_print(q_copy);
 
     // Сохраняем в файл
     int *orig_array = (int*)malloc(q.size * sizeof(int));
@@ -265,12 +262,13 @@ void handle_sort_once(void)
     
     if (orig_array && sorted_array) {
         QueueNode *node_sorted = q_copy->head;
-        QueueNode *node_orig = q->head;
+        QueueNode *node_orig = q.head;
         size_t i = 0;
         while (node_sorted) {
             orig_array[i] = node_orig->value;
             sorted_array[i] = node_sorted->value; // уже отсортировано
             node_sorted = node_sorted->next;
+            node_orig = node_orig->next;
             i++;
         }
         
@@ -281,6 +279,7 @@ void handle_sort_once(void)
         }
     }
     
+    free(q_copy);
     free(orig_array);
     free(sorted_array);
     free(numbers);
