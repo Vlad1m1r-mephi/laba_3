@@ -55,4 +55,4 @@ QueueNode* get_tail(QueueNode *head);
 
 Queue* queue_copy(const Queue *q);
 
-#endif  // Конец защиты от повторного включения
+#endif

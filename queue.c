@@ -167,6 +167,7 @@ QueueNode* partition(QueueNode *head, QueueNode *tail,
     
     while (cur != pivot) {
         if (cur->value < pivot->value) {
+            //перемещаем в левую часть
             if (*new_head == NULL)
                 *new_head = cur;
             prev = cur;
