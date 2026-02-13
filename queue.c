@@ -241,3 +241,24 @@ void queue_quick_sort(Queue *q)
     q->head = quick_sort_recursive(q->head, q->tail);
     q->tail = get_tail(q->head);
 }
+
+Queue* queue_copy(const Queue *q)
+{
+    Queue *copy = (Queue*)malloc(sizeof(Queue));
+    if (!copy)
+        return NULL;
+    
+    queue_init(copy);
+    
+    QueueNode *node = q->head;
+    while (node) {
+        if (queue_push(copy, node->value) != 0) {
+            queue_free(copy);
+            free(copy);
+            return NULL;
+        }
+        node = node->next;
+    }
+    
+    return copy;
+}
