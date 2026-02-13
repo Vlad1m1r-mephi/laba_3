@@ -9,6 +9,7 @@ all:
 	gcc $(SOURCES) -o $(TARGET)
 	
 run: $(TARGET)
+#gcc $(SOURCES) -o $(TARGET)
 	./$(TARGET)
 
 benchmark: $(TARGET)

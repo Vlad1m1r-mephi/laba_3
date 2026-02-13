@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include <locale.h>
+#include <errno.h>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -23,8 +24,6 @@
 void handle_file_mode(const char *filename);
 void handle_sort_once(void);
 void handle_benchmark(void);
-void handle_edit_element(void);
-void handle_queue_operations(void);
 void print_queue_stats(const Queue *q);
 void benchmark_automated(void);
 int safe_scanf_int(int *value);
@@ -82,9 +81,7 @@ int run_app(int argc, char *argv[])
         printf("\nМеню:\n");
         printf("1 - Создать очередь и отсортировать (метод прямого выбора)\n");
         printf("2 - Сравнение скоростей сортировок (очередь)\n");
-        printf("3 - Редактировать элемент очереди\n");
-        printf("4 - Основные операции с очередью\n");
-        printf("5 - Работа с файлом\n");
+        printf("3 - Работа с файлом\n");
         printf("0 - Выход\n> ");
 
         int choice;
@@ -105,12 +102,6 @@ int run_app(int argc, char *argv[])
             handle_benchmark();
             break;
         case 3:
-            handle_edit_element();
-            break;
-        case 4:
-            handle_queue_operations();
-            break;
-        case 5:
             {
                 char filename[256];
                 printf("Введите имя файла: ");
@@ -170,7 +161,6 @@ int safe_scanf_size_t(size_t *value)
         while ((ch = getchar()) != '\n' && ch != EOF) {}
         return 0;
     }
-//djlfjshfhksdfdssesfddfjdj
     return 1;
 }
 
@@ -275,165 +265,6 @@ void handle_sort_once(void)
     free(orig_array);
     free(sorted_array);
     free(numbers);
-    queue_free(&q);
-}
-
-// Редактирование элемента очереди по индексу
-void handle_edit_element(void)
-{
-    Queue q;
-    queue_init(&q);
-
-    printf("Введите последовательность целых чисел через пробел:\n> ");
-    int *numbers = NULL;
-    size_t count = read_ints_from_stdin(&numbers);
-    
-    if (count == 0 || !numbers) {
-        printf("Не удалось прочитать числа.\n");
-        queue_free(&q);
-        free(numbers);
-        return;
-    }
-
-    for (size_t i = 0; i < count; ++i) {
-        if (queue_push(&q, numbers[i]) != 0) {
-            printf("Ошибка: не хватает памяти для очереди.\n");
-            free(numbers);
-            queue_free(&q);
-            return;
-        }
-    }
-
-    printf("\nТекущая очередь (%zu элементов):\n", q.size);
-    queue_print(&q);
-
-    if (q.size > 0) {
-        size_t index;
-        int new_value;
-        
-        printf("Введите индекс элемента для редактирования (0-%zu): ", q.size - 1);
-        if (!safe_scanf_size_t(&index)) {
-            printf("Ошибка ввода индекса.\n");
-            free(numbers);
-            queue_free(&q);
-            return;
-        }
-        
-        printf("Введите новое значение: ");
-        if (!safe_scanf_int(&new_value)) {
-            printf("Ошибка ввода значения.\n");
-            free(numbers);
-            queue_free(&q);
-            return;
-        }
-
-        if (queue_edit_at(&q, index, new_value) == 0) {
-            printf("Элемент успешно изменен. Новая очередь:\n");
-            queue_print(&q);
-        } else {
-            printf("Ошибка: неверный индекс.\n");
-        }
-    }
-
-    free(numbers);
-    queue_free(&q);
-}
-
-// Меню операций с очередью
-void handle_queue_operations(void)
-{
-    Queue q;
-    queue_init(&q);
-    
-    int done = 0;
-    while (!done) {
-        printf("\nОперации с очередью:\n");
-        printf("1 - Добавить элемент\n");
-        printf("2 - Удалить элемент (из начала)\n");
-        printf("3 - Вывести очередь\n");
-        printf("4 - Редактировать элемент\n");
-        printf("5 - Очистить очередь\n");
-        printf("6 - Вывести статистику\n");
-        printf("0 - Назад\n> ");
-        
-        int choice;
-        if (!safe_scanf_int(&choice)) {
-            printf("Ошибка ввода, попробуйте еще раз.\n");
-            continue;
-        }
-        getchar();
-        
-        switch (choice) {
-        case 1: {
-            int value;
-            printf("Введите значение: ");
-            if (!safe_scanf_int(&value)) {
-                printf("Ошибка ввода значения.\n");
-                break;
-            }
-            getchar();
-            if (queue_push(&q, value) == 0) {
-                printf("Элемент %d добавлен.\n", value);
-            } else {
-                printf("Ошибка добавления.\n");
-            }
-            break;
-        }
-        case 2: {
-            int value;
-            if (queue_pop(&q, &value) == 0) {
-                printf("Удален элемент: %d\n", value);
-            } else {
-                printf("Очередь пуста.\n");
-            }
-            break;
-        }
-        case 3:
-            printf("Содержимое очереди:\n");
-            queue_print(&q);
-            break;
-        case 4: {
-            if (q.size == 0) {
-                printf("Очередь пуста.\n");
-                break;
-            }
-            size_t index;
-            int new_value;
-            printf("Введите индекс (0-%zu): ", q.size - 1);
-            if (!safe_scanf_size_t(&index)) {
-                printf("Ошибка ввода индекса.\n");
-                break;
-            }
-            printf("Введите новое значение: ");
-            if (!safe_scanf_int(&new_value)) {
-                printf("Ошибка ввода значения.\n");
-                break;
-            }
-            getchar();
-            if (queue_edit_at(&q, index, new_value) == 0) {
-                printf("Элемент изменен.\n");
-            } else {
-                printf("Неверный индекс.\n");
-            }
-            break;
-        }
-        case 5:
-            queue_free(&q);
-            queue_init(&q);
-            printf("Очередь очищена.\n");
-            break;
-        case 6:
-            print_queue_stats(&q);
-            break;
-        case 0:
-            done = 1;
-            break;
-        default:
-            printf("Неизвестная операция.\n");
-            break;
-        }
-    }
-    
     queue_free(&q);
 }
 
@@ -634,7 +465,7 @@ void benchmark_automated(void)
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", t);
     
     // Размеры для тестирования
-    size_t sizes[] = {100, 500, 1000, 5000, 10000, 20000, 50000, 75000, 100000};
+    size_t sizes[] = {1000, 5000, 10000, 20000, 50000, 75000, 100000, 125000, 150000};
     int num_sizes = sizeof(sizes) / sizeof(sizes[0]);
     
     double *selection_times = (double*)malloc(num_sizes * sizeof(double));
@@ -734,5 +565,4 @@ void benchmark_automated(void)
     printf("2. Выделите все данные\n");
     printf("3. Вставьте -> Диаграмма -> Точечная диаграмма\n");
     printf("4. Настройте оси (X - Размер очереди, Y - Время в секундах)\n");
-    printf("5. Добавьте линию тренда для каждого алгоритма\n");
 }

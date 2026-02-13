@@ -152,16 +152,6 @@ void queue_selection_sort(Queue *q)
             new_tail->next = min;
             new_tail = min;
         }
-        
-        // Нужно аккуратно обработать случай, когда min был current
-        if (min == current) {
-            if (prev_current) {
-                prev_current->next = current->next;
-                current = current->next;
-            } else {
-                current = q->head->next;
-            }
-        }
     }
     
     q->head = new_head;
